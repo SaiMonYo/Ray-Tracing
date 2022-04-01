@@ -1,7 +1,9 @@
 # cpptracer
 
 hehhehe bunny
+
 ![Screenshot](images/bunny.png)
 
-smoother bunny (with errors)
+smoother bunny (with slight smoothing errors in areas)
+
 ![Screenshot](images/img.png)

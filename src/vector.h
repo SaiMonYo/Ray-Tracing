@@ -40,6 +40,10 @@ class Vec3{
             return *this;
         }
 
+        inline float lengthsquared() const{
+            return x * x + y * y + z * z;
+        }
+
         // get length or magnitude of vector
         inline float length() const{
             return sqrt(x * x + y * y + z * z);

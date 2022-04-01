@@ -106,6 +106,7 @@ class TriangleMesh: public Observable{
         std::vector<Vec3> vertices;
         std::vector<Vec3> normals;
         std::vector<Vec3> texcoords;
+        std::vector<Vec3> faceNormals;
         std::vector<std::vector<int>> faces;
         Vec3 boundingBox[2];
 };
@@ -115,32 +116,58 @@ bool TriangleMesh::intersection(Ray& ray, Intersection& inter) const{
         return false;
     }
     std::vector<Vec3> hitface;
-    int i = 0;
-    int index = 0;
+    int i = -1;
+    int index = -1;
+    float pu = 0;
+    float pv = 0;
     for(const auto& face : faces){
+        i++;
         Vec3 v0 = vertices[face[0] - 1];
         Vec3 v1 = vertices[face[1] - 1];
         Vec3 v2 = vertices[face[2] - 1];
-        float t = intersectTriangle(ray, v0, v1, v2);
+        Vec3 v0v1 = v1 - v0;
+        Vec3 v0v2 = v2 - v0;
+        Vec3 pvec = ray.direction.cross(v0v2);
+        float det = v0v1.dot(pvec);
+
+        if (det <= 0){
+            continue;
+        }
+
+        float invdet = 1.0 / det;
+        Vec3 tvec = ray.origin - v0;
+        float u = tvec.dot(pvec) * invdet;
+        
+        if (u < 0 || u > 1){
+            continue;
+        }
+
+        Vec3 qvec = tvec.cross(v0v1);
+        float v = ray.direction.dot(qvec) * invdet;
+
+        if (v < 0 || u + v > 1){
+            continue;
+        }
+
+        pu = u;
+        pv = v;
+        float t = v0v2.dot(qvec) * invdet;
         if (t > 0 && t < inter.timestep){
-            if (hitface.size() == 3){
-                hitface[0] = v0;
-                hitface[1] = v1;
-                hitface[2] = v2;
-            }
-            else{
-                hitface.push_back(v0);
-                hitface.push_back(v1);
-                hitface.push_back(v2);
-            }
             inter.timestep = t;
             index = i;
         }
-        i++;
     }
-    if (hitface.size() == 3){
+    if (index > -1){
         inter.point = ray.attime(inter.timestep);
-        inter.normal = (hitface[1] - hitface[0]).cross(hitface[2] - hitface[0]).normalise();
+        auto face = faces[index];
+        Vec3 v0 = vertices[face[0] - 1];
+        Vec3 v1 = vertices[face[1] - 1];
+        Vec3 v2 = vertices[face[2] - 1];
+        float v0p = (v0 - inter.point).length();
+        float v1p = (v1 - inter.point).length();
+        float v2p = (v2 - inter.point).length();
+        inter.normal = normals[face[0] - 1] * (1 - pu - pv) + normals[face[1] - 1] * pu + normals[face[2] - 1] * pv;
+        inter.normal.normalise();
         return true;
     }
     return false;

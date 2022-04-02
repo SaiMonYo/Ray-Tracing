@@ -9,21 +9,16 @@
 #include "scene.h"
 
 
-const int WIDTH = 400;
-const int HEIGHT = 400;
+const int WIDTH = 1280;
+const int HEIGHT = 720;
 const float fov = M_PI / 4;
 
-
-void writeToFile(std::string filename, std::string content) {
-    std::ofstream file(filename);
-    file << content;
-    file.close();
-}
 
 void drawPixel(SDL_Renderer *renderer, int x, int y, Vec3 colour){
     SDL_SetRenderDrawColor(renderer, colour.x, colour.y, colour.z, 255);
     SDL_RenderDrawPoint(renderer, x, y);
 }
+
 
 Vec3 trace(Ray &ray, Scene world){
     float tnear = finf;
@@ -35,29 +30,37 @@ Vec3 trace(Ray &ray, Scene world){
     return Vec3(0,0,0);
 }
 
+
 void render(SDL_Renderer *renderer, Scene world){
     float invWidth = 1/(WIDTH + 0.0);
     float invHeight = 1/(HEIGHT + 0.0);
     float ratio = WIDTH / (HEIGHT + 0.0);
     float angle = tan(fov);
     Vec3 colour;
-    std::string img = std::to_string(WIDTH) + "\n" + std::to_string(HEIGHT) + "\n\n";
+    std::ofstream file("images/imgascii.ollo", std::ios::out|std::ios::binary);
+    file << WIDTH << "\n" << HEIGHT << "\n\n";
     for (int y = 0; y < HEIGHT; y++){
         for (int x = 0; x < WIDTH; x++){
             float xd = (2 * ((x+0.5) * invWidth) - 1) * angle * ratio;
             float yd = (1 - 2 * ((y + 0.5) * invHeight)) * angle;
             Ray ray = Ray(Vec3(0,0.5,1), Vec3(xd, yd, -1).normalise());
-            colour = trace(ray, world);
+            colour = trace(ray, world).clamp(0, 255);
             drawPixel(renderer, x, y, colour);
-            img += std::to_string(colour.x) + " " + std::to_string(colour.y) + " " + std::to_string(colour.z) + "\n";
+            int xp = static_cast<int>(colour.x);
+            int yp = static_cast<int>(colour.y);
+            int zp = static_cast<int>(colour.z);
+            file << (unsigned char)xp;
+            file << (unsigned char)yp;
+            file << (unsigned char)zp;
         }
         if (y % (HEIGHT / 10) == 0){
             std::cout << "Rendering: " << (y * 100) / HEIGHT << "%" << std::endl;
             SDL_RenderPresent(renderer);
         }
     }
-    writeToFile("images/img.ollo", img);
+    file.close();
 }
+
 
 int main(int argc, char** argv){  
     if(SDL_Init(SDL_INIT_VIDEO) < 0){
@@ -96,6 +99,7 @@ int main(int argc, char** argv){
         render(renderer, world);
         SDL_RenderPresent(renderer);
         std::cout << "loaded" << std::endl;
+        running = false;
     }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

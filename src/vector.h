@@ -67,6 +67,10 @@ class Vec3{
             return Vec3(std::min(x, other.x), std::min(y, other.y), std::min(z, other.z));
         }
 
+        inline Vec3 clamp(float min, float max) const{
+            return Vec3(std::max(min, std::min(max, x)), std::max(min, std::min(max, y)), std::max(min, std::min(max, z)));
+        }
+
     
         // !!!! VECTOR OPERATORS BELOW !!!!
         inline Vec3 operator-() const{

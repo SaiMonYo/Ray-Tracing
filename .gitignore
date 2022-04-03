@@ -3,3 +3,6 @@
 /main.exe
 /SDL2.dll
 *.ollo
+compression/*.exe
+compression/*.h
+compression/*.c

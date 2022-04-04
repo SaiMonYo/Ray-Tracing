@@ -71,6 +71,12 @@ class Vec3{
             return Vec3(std::max(min, std::min(max, x)), std::max(min, std::min(max, y)), std::max(min, std::min(max, z)));
         }
 
+        inline void toFloor(){
+            x = floor(x);
+            y = floor(y);
+            z = floor(z);
+        }
+
     
         // !!!! VECTOR OPERATORS BELOW !!!!
         inline Vec3 operator-() const{

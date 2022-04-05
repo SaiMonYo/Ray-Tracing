@@ -35,7 +35,12 @@ int getKey(Vec3 colour){
     return ((int)(colour.x * 3 + colour.y * 5 + colour.z * 7) % 64);
 }
 
-
+void write32(std::ofstream& file, long value){
+    file << (unsigned char) ((value & 0xff000000) >> 24);
+    file << (unsigned char) ((value & 0x00ff0000) >> 16);
+    file << (unsigned char) ((value & 0x0000ff00) >> 8);
+    file << (unsigned char) ((value & 0x000000ff));
+}
 
 void render(Scene world){
     float invWidth = 1/(WIDTH + 0.0);
@@ -44,18 +49,9 @@ void render(Scene world){
     float angle = tan(fov);
     Vec3 colour;
     std::ofstream qoi("images/result.qoi", std::ios::out|std::ios::binary);
-    qoi << (unsigned char) ((0x716f6966 & 0xff000000) >> 24);
-    qoi << (unsigned char) ((0x716f6966 & 0x00ff0000) >> 16);
-    qoi << (unsigned char) ((0x716f6966 & 0x0000ff00) >> 8);
-    qoi << (unsigned char) ((0x716f6966 & 0x000000ff));
-    qoi << (unsigned char) ((WIDTH & 0xff000000) >> 24);
-    qoi << (unsigned char) ((WIDTH & 0x00ff0000) >> 16);
-    qoi << (unsigned char) ((WIDTH & 0x0000ff00) >> 8);
-    qoi << (unsigned char) ((WIDTH & 0x000000ff));
-    qoi << (unsigned char) ((HEIGHT & 0xff000000) >> 24);
-    qoi << (unsigned char) ((HEIGHT & 0x00ff0000) >> 16);
-    qoi << (unsigned char) ((HEIGHT & 0x0000ff00) >> 8);
-    qoi << (unsigned char) ((HEIGHT & 0x000000ff));
+    write32(qoi, 0x716f6966);
+    write32(qoi, WIDTH);
+    write32(qoi, HEIGHT);
     qoi << (unsigned char) 3;
     qoi << (unsigned char) 1;
     Vec3 lookup[64] = {};

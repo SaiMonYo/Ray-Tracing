@@ -8,8 +8,8 @@
 #include "scene.h"
 
 
-const int WIDTH = 1280;
-const int HEIGHT = 720;
+const int WIDTH = 800;
+const int HEIGHT = 800;
 const float fov = M_PI / 4;
 
 const int QOI_OP_RUN   = 0xc0;
@@ -62,10 +62,9 @@ void render(Scene world){
             // calculate ray colour
             float xd = (2 * ((x+0.5) * invWidth) - 1) * angle * ratio;
             float yd = (1 - 2 * ((y + 0.5) * invHeight)) * angle;
-            Ray ray = Ray(Vec3(0,0.5,1), Vec3(xd, yd, -1).normalise());
+            Ray ray = Ray(world.camera, Vec3(xd, yd, -1).normalise());
             colour = trace(ray, world).clamp(0, 255);
             colour.toFloor();
-
             // write to qoi
             if (colour == previous){
                 // run length encoding
@@ -125,5 +124,6 @@ int main(){
     Scene world;
     world.addObject(std::make_shared<TriangleMesh>("Objects/bunny.obj"));
     world.light = Vec3(0, 10, 7);
+    world.camera = Vec3(0,0.5,1);
     render(world);
 }

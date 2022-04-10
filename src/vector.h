@@ -71,10 +71,18 @@ class Vec3{
             return Vec3(std::max(min, std::min(max, x)), std::max(min, std::min(max, y)), std::max(min, std::min(max, z)));
         }
 
-        inline void toFloor(){
+        inline Vec3 toFloor(){
             x = floor(x);
             y = floor(y);
             z = floor(z);
+            return *this;
+        }
+
+        inline Vec3 toAbs(){
+            x = abs(x);
+            y = abs(y);
+            z = abs(z);
+            return *this;
         }
 
     

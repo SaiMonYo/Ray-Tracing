@@ -1,6 +1,7 @@
 from sys import argv
 from PIL import Image
-from time import perf_counter
+
+__version__ = '0.1'
 
 class Colour:
     def __init__(self, r = 0, g = 0, b = 0):
@@ -23,6 +24,8 @@ class Colour:
     def __str__(self):
         return f"({self.r}, {self.g}, {self.b})"
 
+help_commands = ["--help", "-h", "?", "help", "--version", "-v", "version"]
+functions = ["buffer_to_qoi", "qoi_to_png", "png_to_qoi"]
 
 # QOI byte headers
 QOI_OP_RUN   = 0xc0
@@ -43,10 +46,11 @@ def buffer_to_qoi(bufferfile_name, qoi_file_name):
     '''
     Converts a buffer file to a qoi file.
     Buffer file has the following format:
-    width: on first line
-    height: on second line
+    width: on first line in integer form e.g. 2560
+    height: on second line in integer form e.g. 1440
     a blank line
-    Then a list of RGB values all in one line.
+    Then a list of RGB values all in one line e.g.
+    \\xff\\xff\\xff - represents a single white pixel (\xff\xff\xff in ascii)
     Should be 3 * width * height bytes.
     '''
     counter = 0
@@ -98,7 +102,7 @@ def buffer_to_qoi(bufferfile_name, qoi_file_name):
                                 # small difference of -2 to 1 in each colour channel
                                 if ((-2 <= diff.r <= 1) and (-2 <= diff.g <= 1) and (-2 <= diff.b <= 1)):
                                     qoi.write((QOI_OP_DIFF | ((diff.r + 2) << 4) | ((diff.g + 2) << 2) | (diff.b + 2)).to_bytes(1, 'big'))
-                                # larger differeence of -32 to 31 in green channel and -8 to 7 in red and blue channels
+                                # larger differences of -32 to 31 in green channel and -8 to 7 in red and blue channels
                                 elif ((-32 <= diff.g <= 31) and (-8 <= dr_dg <= 7) and (-8 <= db_dg <= 7)):
                                     qoi.write((QOI_OP_LUMA | (diff.g + 32)).to_bytes(1, 'big'))
                                     qoi.write(((dr_dg + 8) << 4 | (db_dg + 8)).to_bytes(1, 'big'))
@@ -120,6 +124,10 @@ def onetotwoD(index, width):
 def qoi_to_png(qoi_image_file, png_image_file):
     '''
     Converts a qoi file to a png file.
+    .qoi file must be in .qoi format.
+    .qoi format specification can be found here:
+        https://qoiformat.org/qoi-specification.pdf
+    .png must follow the specifications of the PNG standard.
     '''
     with open(qoi_image_file, "rb") as qoi:
         # qoi magic number
@@ -197,22 +205,109 @@ def qoi_to_png(qoi_image_file, png_image_file):
     img.save(png_image_file)
 
 
+def png_to_qoi(png_file_name, qoi_file_name):
+    image = Image.open(png_file_name)
+    pixels = image.load()
+    width = image.size[0]
+    height = image.size[1]
+    with open(qoi_file_name, "wb") as qoi:
+        array = [Colour() for _ in range(64)]
+        previous = Colour()
+        run_length = 0
+        # write file headers
+        write32(qoi, 0x716f6966)
+        write32(qoi, width)
+        write32(qoi, height)
+        qoi.write(b'\x03')
+        qoi.write(b'\x01')
+        for y in range(height):
+            for x in range(width):
+                r, g, b = pixels[x, y]
+                current = Colour(r, g, b)
+                # run length encoding
+                if current == previous:
+                    run_length += 1
+                    if run_length == 62:
+                        qoi.write((QOI_OP_RUN | (run_length-1)).to_bytes(1, 'big'))
+                        previous = current
+                        run_length = 0
+                else:
+                    # write previous run
+                    if run_length > 0:
+                        qoi.write((QOI_OP_RUN | (run_length-1)).to_bytes(1, 'big'))
+                        run_length = 0
+                    # check if in lookup table
+                    key = current.key()
+                    if current == array[key]:
+                        qoi.write((QOI_OP_INDEX | key).to_bytes(1, 'big'))
+                    else:
+                        # calculate differences
+                        array[key] = current
+                        diff = current - previous
+                        dr_dg = diff.r - diff.g
+                        db_dg = diff.b - diff.g
+                        # small difference of -2 to 1 in each colour channel
+                        if ((-2 <= diff.r <= 1) and (-2 <= diff.g <= 1) and (-2 <= diff.b <= 1)):
+                            qoi.write((QOI_OP_DIFF | ((diff.r + 2) << 4) | ((diff.g + 2) << 2) | (diff.b + 2)).to_bytes(1, 'big'))
+                        # larger differences of -32 to 31 in green channel and -8 to 7 in red and blue channels
+                        elif ((-32 <= diff.g <= 31) and (-8 <= dr_dg <= 7) and (-8 <= db_dg <= 7)):
+                            qoi.write((QOI_OP_LUMA | (diff.g + 32)).to_bytes(1, 'big'))
+                            qoi.write(((dr_dg + 8) << 4 | (db_dg + 8)).to_bytes(1, 'big'))
+                        else:
+                            # no encoding possible for this colour
+                            qoi.write(QOI_OP_RGB.to_bytes(1, 'big'))
+                            qoi.write(current.r.to_bytes(1, 'big'))
+                            qoi.write(current.g.to_bytes(1, 'big'))
+                            qoi.write(current.b.to_bytes(1, 'big'))
+                previous = current
+
+
+def _help():
+    print("Usages: ")
+    print("       python3 comp.py <qoi_image_file> <png_image_file>     - convert qoi image to png")
+    print("       python3 comp.py <qoi_image_file>                      - convert qoi image to png of same name")
+    print("       python3 comp.py <png_image_file> <qoi_image_file>     - convert png image to qoi")
+    print("       python3 comp.py <qoi_image_file>                      - convert png image to qoi of same name")
+    print("       python3 comp.py <buffer_image_file> <qoi_image_file>  - convert buffer image to qoi")
+    print("       python3 comp.py <buffer_image_file>                   - convert buffer image to qoi of same name")
+    print("")
+    print("To get specific help on a function (from list below) use: python3 comp.py --help <function_name>")
+    print("       png_to_qoi")
+    print("       qoi_to_png")
+    print("       buffer_to_qoi")
+
 def main():
     if len(argv) == 3:
+        if argv[1] not in help_commands:
+            if argv[1].endswith(".qoi"):
+                qoi_to_png(argv[1], argv[2])
+            elif argv[1].endswith(".png"):
+                png_to_qoi(argv[1], argv[2])
+            elif argv[2].endswith(".qoi"):
+                buffer_to_qoi(argv[1], argv[2])
+            exit(0)
+        else:
+            if argv[2] == "png_to_qoi":
+                print(png_to_qoi.__doc__)
+            elif argv[2] == "qoi_to_png":
+                print(qoi_to_png.__doc__)
+            elif argv[2] == "buffer_to_qoi":
+                print(buffer_to_qoi.__doc__)
+            exit(0)
+    if len(argv) == 2 and argv[1] not in help_commands:
         if argv[1].endswith(".qoi"):
-            qoi_to_png(argv[1], argv[2])
-        elif argv[2].endswith(".qoi"):
-            buffer_to_qoi(argv[1], argv[2])
+            qoi_to_png(argv[1], argv[1][:-4] + ".png")
+        elif argv[1].endswith(".png"):
+            png_to_qoi(argv[1], argv[1][:-4] + ".qoi")
+        elif "." in argv[1]:
+            buffer_to_qoi(argv[1], argv[1][:-4] + ".qoi")
         exit(0)
-    if len(argv) == 2 and argv[1].endswith(".qoi"):
-        qoi_to_png(argv[1], argv[1][:-4] + ".png")
-        exit(0)
-    print("Incorrect use of program")
-    print("Usage: ")
-    print("   python3 comp.py <qoi_image_file> <png_image_file>")
-    print("or: ")
-    print("   python3 comp.py <buffer_image_file> <qoi_image_file>")
-    exit(1)
+    if argv[1] == "--help":
+        _help()
+    elif argv[1] == "--version":
+        print(f"    version: {__version__}")
+        print("    Currently only supports non-alpha channel files (To be implemented soon)")
+    exit(0)
 
 if __name__ == "__main__":
     main()

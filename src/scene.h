@@ -12,6 +12,7 @@ class Scene{
     public:
         std::vector<std::shared_ptr<Observable>> objects;
         Vec3 light;
+        Vec3 camera;
 
         Scene(){}
 

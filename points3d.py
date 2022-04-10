@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 
+'''function to plot 3d points from obj file to give idea how big model is'''
+
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
@@ -7,7 +9,7 @@ X = []
 Y = []
 Z = []
 
-with open("Objects/bigbunny.obj", "r") as f:
+with open("Objects/cow.obj", "r") as f:
     for line in f:
         if line.startswith("v "):
             x, y, z = line.split()[1:]

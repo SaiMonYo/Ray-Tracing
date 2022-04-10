@@ -37,22 +37,26 @@ class TriangleMesh: public Observable{
                     std::istringstream iss(line);
                     std::string type;
                     iss >> type;
+                    // vertex
                     if(type == "v"){
                         Vec3 v;
                         iss >> v.x >> v.y >> v.z;
                         vertices.push_back(v);
                     }
+                    // vertex normal
                     else if(type == "vn"){
                         Vec3 vn;
-                        iss >> vn.x >> vn.y >> vn.z;
+                        iss >> vn.x >> vn.y >> vn.z;                     
                         normals.push_back(vn);
                     }
+                    // vertex texture
                     else if(type == "vt"){
                         Vec3 vt;
                         iss >> vt.x >> vt.y;
                         texcoords.push_back(vt);
                     }
                 }
+                // face
                 else if (line[0] == 'f'){
                     std::istringstream iss(line);
                     std::string type;
@@ -72,10 +76,29 @@ class TriangleMesh: public Observable{
                 }
             }
             file.close();
+            // calculate normals if they are not given
+            if (normals.size() == 0){
+                for (int i = 0; i < faces.size(); i++){
+                    normals.push_back(Vec3(0,0,0));
+                }
+                for (auto face: faces){
+                    Vec3 v0 = vertices[face[0] - 1];
+                    Vec3 v1 = vertices[face[1] - 1];
+                    Vec3 v2 = vertices[face[2] - 1];
+                    Vec3 normal = (v1 - v0).cross(v2 - v0).normalise();
+                    normals[face[0] - 1] += normal;
+                    normals[face[1] - 1] += normal;
+                    normals[face[2] - 1] += normal;
+                }
+                for (int i = 0; i < normals.size(); i++){
+                    normals[i] = normals[i].normalise();
+                }
+            }
             recalcBoundingBox();
         }
 
         void recalcBoundingBox(){
+            // calculate bounding box for quick intersection testing
             Vec3 vmax = Vec3(-finf);
             Vec3 vmin = Vec3(finf);
             for(const auto& v : vertices){
@@ -121,6 +144,7 @@ bool TriangleMesh::intersection(Ray& ray, Intersection& inter) const{
     float pu = 0;
     float pv = 0;
     for(const auto& face : faces){
+        // check if ray intersects face by using moller-trumbore algorithm
         i++;
         Vec3 v0 = vertices[face[0] - 1];
         Vec3 v1 = vertices[face[1] - 1];
@@ -157,17 +181,27 @@ bool TriangleMesh::intersection(Ray& ray, Intersection& inter) const{
             index = i;
         }
     }
+    // index is greater than -1 if there is an intersection
     if (index > -1){
         inter.point = ray.attime(inter.timestep);
         auto face = faces[index];
-        Vec3 v0 = vertices[face[0] - 1];
-        Vec3 v1 = vertices[face[1] - 1];
-        Vec3 v2 = vertices[face[2] - 1];
-        float v0p = (v0 - inter.point).length();
-        float v1p = (v1 - inter.point).length();
-        float v2p = (v2 - inter.point).length();
-        inter.normal = normals[face[0] - 1] * (1 - pu - pv) + normals[face[1] - 1] * pu + normals[face[2] - 1] * pv;
-        inter.normal.normalise();
+        Vec3 n0 = normals[face[0] - 1];
+        Vec3 n1 = normals[face[1] - 1];
+        Vec3 n2 = normals[face[2] - 1];
+        float n0n1 = n1.dot(n0);
+        float n0n2 = n2.dot(n0);
+        float n1n2 = n2.dot(n1);
+        // smooth face if angle between normals is less than 90 degrees
+        if (n0n1 > 0.0 && n0n2 > 0.0 && n1n2 > 0.0){
+            inter.normal = normals[face[0] - 1] * (1 - pu - pv) + normals[face[1] - 1] * pu + normals[face[2] - 1] * pv;
+        }
+        else{
+            //Vec3 v0 = vertices[face[0] - 1];
+            //Vec3 v1 = vertices[face[1] - 1];
+            //Vec3 v2 = vertices[face[2] - 1];
+            //inter.normal = (v1 - v0).cross(v2 - v0).normalise();
+            inter.normal = (n0 + n1 + n2).normalise();
+        }
         return true;
     }
     return false;

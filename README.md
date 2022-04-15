@@ -6,6 +6,4 @@ bunny with no artifacts
 
 
 TODO:
-- Fix Artifacts in Mesh Smoothing
-- Other Shapes (Planes)
-- Eventually Refraction and Reflection
+- Refraction and Reflection

@@ -1,15 +1,14 @@
 #include <iostream>
 #include <vector>
 #include <memory>
-#include "vector.h"
 #include "triangle.h"
-#include "ray.h"
+#include "plane.h"
 #include "trianglemesh.h"
 #include "scene.h"
+#include <chrono>
 
-
-const int WIDTH = 800;
-const int HEIGHT = 800;
+const int WIDTH = 1080;
+const int HEIGHT = 720;
 const float fov = M_PI / 4;
 
 const int QOI_OP_RUN   = 0xc0;
@@ -24,8 +23,24 @@ Vec3 trace(Ray &ray, Scene world){
     float tnear = finf;
     Intersection inter;
     if (world.intersection(ray, inter)){
+        // not working yet
+        
+        // get shadows
+        // Vec3 pointToLight = world.light - inter.point;
+        // Ray shadowRay(inter.point + pointToLight * 0.001f, pointToLight.normalise());
+        // Intersection shadowInter;
+        // if (world.intersection(shadowRay, shadowInter)){
+        //     return Vec3(0, 0, 0);
+        // }
+
         float dotted = inter.normal.dot((world.light - inter.point).normalise());
-        return Vec3(255,255,255) * std::max(0.1f, dotted);
+        Vec3 colour = inter.colour * std::max(0.07f, dotted);
+
+        Vec3 lightDirection = (world.light - inter.point).normalise();
+        Vec3 v = (lightDirection - ray.direction).normalise();
+        float phong = pow(inter.normal.dot(v), 64);
+        colour += Vec3(255, 255, 255) * phong * 0.4;
+        return colour;
     }
     return Vec3(0,0,0);
 }
@@ -45,10 +60,10 @@ void write32(std::ofstream& file, long value){
 void render(Scene world){
     float invWidth = 1/(WIDTH + 0.0);
     float invHeight = 1/(HEIGHT + 0.0);
-    float ratio = WIDTH / (HEIGHT + 0.0);
+    float ratio = WIDTH/(HEIGHT + 0.0);
     float angle = tan(fov);
     Vec3 colour;
-    std::ofstream qoi("images/result.qoi", std::ios::out|std::ios::binary);
+    std::ofstream qoi("images/bunny.qoi", std::ios::out|std::ios::binary);
     write32(qoi, 0x716f6966);
     write32(qoi, WIDTH);
     write32(qoi, HEIGHT);
@@ -120,10 +135,16 @@ void render(Scene world){
 }
 
 
-int main(){  
+int main(){ 
+    // time the render
+    auto start = std::chrono::high_resolution_clock::now();
     Scene world;
-    world.addObject(std::make_shared<TriangleMesh>("Objects/bunny.obj"));
-    world.light = Vec3(0, 10, 7);
-    world.camera = Vec3(0,0.5,1);
+    world.addObject(std::make_shared<TriangleMesh>("Objects/bunny.obj", Vec3(252,140,92)));
+    world.addObject(std::make_shared<Plane>(Vec3(0,-2,0), Vec3(0, 1, 0), Vec3(255,255,255)));
+    //world.light = Vec3(0, 2, 3);
+    world.light = Vec3(0, 3, 3);
+    world.camera = Vec3(0,1,2);
     render(world);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << "Render time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
 }

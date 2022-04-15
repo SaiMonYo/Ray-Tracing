@@ -1,12 +1,8 @@
 # cpptracer
 
-hehhehe bunny
+bunny with no artifacts
 
 ![Screenshot](images/bunny.png)
-
-smoother bunny (with slight smoothing errors in areas)
-
-![Screenshot](images/img.png)
 
 
 TODO:

@@ -3,3 +3,5 @@
 /main.exe
 /SDL2.dll
 *.exe
+*.qoi
+images/result.png

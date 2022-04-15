@@ -3,7 +3,8 @@
 #include <math.h>
 
 
-const int finf  = 1e8;
+const float finf  = 1e8;
+const float EPSILLON = 0.000000001f;
 
 
 class Vec3{

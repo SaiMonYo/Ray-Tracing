@@ -24,12 +24,13 @@ std::string replaceSlash(std::string str){
 
 class TriangleMesh: public Observable{
     public:
-        TriangleMesh(const std::string& filename){
+        TriangleMesh(const std::string& filename, const Vec3& colour_){
             std::ifstream file(filename);
             if(!file.is_open()){
                 std::cerr << "Could not open file " << filename << std::endl;
                 return;
             }
+            colour = colour_;
             std::string line;
             while(std::getline(file, line)){
                 if(line.empty()) continue;
@@ -132,6 +133,7 @@ class TriangleMesh: public Observable{
         std::vector<Vec3> faceNormals;
         std::vector<std::vector<int>> faces;
         Vec3 boundingBox[2];
+        Vec3 colour;
 };
 
 bool TriangleMesh::intersection(Ray& ray, Intersection& inter) const{
@@ -153,8 +155,7 @@ bool TriangleMesh::intersection(Ray& ray, Intersection& inter) const{
         Vec3 v0v2 = v2 - v0;
         Vec3 pvec = ray.direction.cross(v0v2);
         float det = v0v1.dot(pvec);
-
-        if (det <= 0){
+        if (det < EPSILLON){
             continue;
         }
 
@@ -173,10 +174,10 @@ bool TriangleMesh::intersection(Ray& ray, Intersection& inter) const{
             continue;
         }
 
-        pu = u;
-        pv = v;
         float t = v0v2.dot(qvec) * invdet;
-        if (t > 0 && t < inter.timestep){
+        if (t > EPSILLON && t < inter.timestep){
+            pu = u;
+            pv = v;
             inter.timestep = t;
             index = i;
         }
@@ -191,17 +192,8 @@ bool TriangleMesh::intersection(Ray& ray, Intersection& inter) const{
         float n0n1 = n1.dot(n0);
         float n0n2 = n2.dot(n0);
         float n1n2 = n2.dot(n1);
-        // smooth face if angle between normals is less than 90 degrees
-        if (n0n1 > 0.0 && n0n2 > 0.0 && n1n2 > 0.0){
-            inter.normal = normals[face[0] - 1] * (1 - pu - pv) + normals[face[1] - 1] * pu + normals[face[2] - 1] * pv;
-        }
-        else{
-            //Vec3 v0 = vertices[face[0] - 1];
-            //Vec3 v1 = vertices[face[1] - 1];
-            //Vec3 v2 = vertices[face[2] - 1];
-            //inter.normal = (v1 - v0).cross(v2 - v0).normalise();
-            inter.normal = (n0 + n1 + n2).normalise();
-        }
+        inter.normal = normals[face[0] - 1] * (1 - pu - pv) + normals[face[1] - 1] * pu + normals[face[2] - 1] * pv;
+        inter.colour = colour;
         return true;
     }
     return false;

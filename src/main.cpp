@@ -1,14 +1,14 @@
 #include <iostream>
 #include <vector>
 #include <memory>
-#include "triangle.h"
 #include "plane.h"
 #include "trianglemesh.h"
 #include "scene.h"
 #include <chrono>
 
-const int WIDTH = 1080;
-const int HEIGHT = 720;
+
+const int WIDTH = 400;
+const int HEIGHT = 400;
 const float fov = M_PI / 4;
 
 const int QOI_OP_RUN   = 0xc0;
@@ -23,18 +23,17 @@ Vec3 trace(Ray &ray, Scene world){
     float tnear = finf;
     Intersection inter;
     if (world.intersection(ray, inter)){
-        // not working yet
-        
+        // working but takes x4 longer
         // get shadows
         // Vec3 pointToLight = world.light - inter.point;
-        // Ray shadowRay(inter.point + pointToLight * 0.001f, pointToLight.normalise());
+        // Ray shadowRay(inter.point + pointToLight * 0.0001f, pointToLight.normalise());
         // Intersection shadowInter;
         // if (world.intersection(shadowRay, shadowInter)){
         //     return Vec3(0, 0, 0);
         // }
 
         float dotted = inter.normal.dot((world.light - inter.point).normalise());
-        Vec3 colour = inter.colour * std::max(0.07f, dotted);
+        Vec3 colour = inter.colour * dotted;
 
         Vec3 lightDirection = (world.light - inter.point).normalise();
         Vec3 v = (lightDirection - ray.direction).normalise();
@@ -63,7 +62,7 @@ void render(Scene world){
     float ratio = WIDTH/(HEIGHT + 0.0);
     float angle = tan(fov);
     Vec3 colour;
-    std::ofstream qoi("images/bunny.qoi", std::ios::out|std::ios::binary);
+    std::ofstream qoi("images/result.qoi", std::ios::out|std::ios::binary);
     write32(qoi, 0x716f6966);
     write32(qoi, WIDTH);
     write32(qoi, HEIGHT);
@@ -136,14 +135,16 @@ void render(Scene world){
 
 
 int main(){ 
-    // time the render
-    auto start = std::chrono::high_resolution_clock::now();
+    //time the render
     Scene world;
-    world.addObject(std::make_shared<TriangleMesh>("Objects/bunny.obj", Vec3(252,140,92)));
-    world.addObject(std::make_shared<Plane>(Vec3(0,-2,0), Vec3(0, 1, 0), Vec3(255,255,255)));
-    //world.light = Vec3(0, 2, 3);
-    world.light = Vec3(0, 3, 3);
-    world.camera = Vec3(0,1,2);
+    std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92));
+    mesh->rescale(20);
+    world.addObject(mesh);
+    world.addObject(std::make_shared<Plane>(Vec3(0,-4,0), Vec3(0, 1, 0), Vec3(255,255,255), true));
+    world.addObject(std::make_shared<Plane>(Vec3(0,0,-20), Vec3(0, 0, 1), Vec3(64,224,208), false));
+    world.light = Vec3(10, 20, 10);
+    world.camera = Vec3(0,0.1,2.7);
+    auto start = std::chrono::high_resolution_clock::now();
     render(world);
     auto end = std::chrono::high_resolution_clock::now();
     std::cout << "Render time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;

@@ -4,11 +4,12 @@
 
 class Ray{
     public:
-        Vec3 origin, direction;
+        Vec3 origin, direction, invDirection;
 
         Ray(const Vec3 Origin_, const Vec3 Direction_){
             origin = Origin_;
             direction = Direction_;
+            invDirection = Direction_.rcp();
         }
 
         Ray(){

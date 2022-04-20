@@ -1,7 +1,7 @@
 /.vscode
-/run.bat
 /main.exe
-/SDL2.dll
 *.exe
 *.qoi
+*.txt
 images/result.png
+test.py

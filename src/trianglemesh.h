@@ -119,6 +119,8 @@ class TriangleMesh: public Observable{
                 vmax = vmax.max(v);
                 vmin = vmin.min(v);
             }
+            std::cout << "vmin: " << vmin << std::endl;
+            std::cout << "vmax: " << vmax << std::endl;
             boundingBox[0] = vmin;
             boundingBox[1] = vmax;
             tree = Octree(boundingBox, faces, vertices, 6);
@@ -131,6 +133,14 @@ class TriangleMesh: public Observable{
             }
             centroid / vertices.size();
             return centroid / vertices.size();
+        }
+
+        void center(){
+            Vec3 centroid = getCentroid();
+            for (int i = 0; i < vertices.size(); i++){
+                vertices[i] -= centroid;
+            }
+            recalcBoundingBox();
         }
 
         void rotate(float pitch, float roll, float yaw){

@@ -7,8 +7,8 @@
 #include <chrono>
 
 
-const int WIDTH = 400;
-const int HEIGHT = 400;
+const int WIDTH = 1280;
+const int HEIGHT = 640;
 const float fov = M_PI / 4;
 
 const int QOI_OP_RUN   = 0xc0;
@@ -23,20 +23,19 @@ Vec3 trace(Ray &ray, Scene world){
     float tnear = finf;
     Intersection inter;
     if (world.intersection(ray, inter)){
-        // working but takes x4 longer
-        // get shadows
-        // Vec3 pointToLight = world.light - inter.point;
-        // Ray shadowRay(inter.point + pointToLight * 0.0001f, pointToLight.normalise());
-        // Intersection shadowInter;
-        // if (world.intersection(shadowRay, shadowInter)){
-        //     return Vec3(0, 0, 0);
-        // }
+        //working but takes x4 longer
+        //get shadows
+        Vec3 pointToLight = (world.light - inter.point).normalise();
+        Ray shadowRay(inter.point + pointToLight * 0.0001f, pointToLight);
+        Intersection shadowInter;
+        if (world.intersection(shadowRay, shadowInter)){
+            return Vec3(0, 0, 0);
+        }
 
-        float dotted = inter.normal.dot((world.light - inter.point).normalise());
+        float dotted = inter.normal.dot(pointToLight);
         Vec3 colour = inter.colour * dotted;
 
-        Vec3 lightDirection = (world.light - inter.point).normalise();
-        Vec3 v = (lightDirection - ray.direction).normalise();
+        Vec3 v = (pointToLight - ray.direction).normalise();
         float phong = pow(inter.normal.dot(v), 64);
         colour += Vec3(255, 255, 255) * phong * 0.4;
         return colour;
@@ -137,13 +136,34 @@ void render(Scene world){
 int main(){ 
     //time the render
     Scene world;
-    std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92));
-    mesh->rescale(20);
-    world.addObject(mesh);
-    world.addObject(std::make_shared<Plane>(Vec3(0,-4,0), Vec3(0, 1, 0), Vec3(255,255,255), true));
+    // lady lucy
+    std::shared_ptr<TriangleMesh> lucy = std::make_shared<TriangleMesh>("Objects/lucy.obj", Vec3(78,117,102));
+    lucy->rescale(0.01);
+    lucy->rotate(0, M_PI/2, M_PI);
+    lucy->center();
+    lucy->translate(Vec3(-10, 0, 0));
+    world.addObject(lucy);
+
+    // buddha
+    std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92));
+    buddha->rescale(60);
+    buddha->center();
+    buddha->translate(Vec3(10, 0, 0));
+    world.addObject(buddha);
+
+    // bunny
+    std::shared_ptr<TriangleMesh> bunny = std::make_shared<TriangleMesh>("Objects/bigbunny.obj", Vec3(255,255,255));
+    bunny->rescale(50);
+    bunny->center();
+    world.addObject(bunny);
+
+    //planes
+    world.addObject(std::make_shared<Plane>(Vec3(0,-6,0), Vec3(0, 1, 0), Vec3(255,255,255), true));
     world.addObject(std::make_shared<Plane>(Vec3(0,0,-20), Vec3(0, 0, 1), Vec3(64,224,208), false));
-    world.light = Vec3(10, 20, 10);
-    world.camera = Vec3(0,0.1,2.7);
+
+
+    world.light = Vec3(0, 50, 10);
+    world.camera = Vec3(0,1,10);
     auto start = std::chrono::high_resolution_clock::now();
     render(world);
     auto end = std::chrono::high_resolution_clock::now();

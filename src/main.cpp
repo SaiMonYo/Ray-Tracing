@@ -137,33 +137,31 @@ int main(){
     //time the render
     Scene world;
     // lady lucy
-    std::shared_ptr<TriangleMesh> lucy = std::make_shared<TriangleMesh>("Objects/lucy.obj", Vec3(78,117,102));
-    lucy->rescale(0.01);
-    lucy->rotate(0, M_PI/2, M_PI);
-    lucy->center();
-    lucy->translate(Vec3(-10, 0, 0));
-    world.addObject(lucy);
+    // std::shared_ptr<TriangleMesh> lucy = std::make_shared<TriangleMesh>("Objects/lucy.obj", Vec3(78,117,102));
+    // lucy->rescale(0.01);
+    // lucy->rotate(0, M_PI/2, M_PI);
+    // lucy->center();
+    // lucy->translate(Vec3(-10, 0, 0));
+    // world.addObject(lucy);
 
     // buddha
     std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92));
-    buddha->rescale(60);
-    buddha->center();
-    buddha->translate(Vec3(10, 0, 0));
+    buddha->rescale(20);
     world.addObject(buddha);
 
     // bunny
-    std::shared_ptr<TriangleMesh> bunny = std::make_shared<TriangleMesh>("Objects/bigbunny.obj", Vec3(255,255,255));
-    bunny->rescale(50);
-    bunny->center();
-    world.addObject(bunny);
+    // std::shared_ptr<TriangleMesh> bunny = std::make_shared<TriangleMesh>("Objects/bigbunny.obj", Vec3(255,255,255));
+    // bunny->rescale(50);
+    // bunny->center();
+    // world.addObject(bunny);
 
     //planes
-    world.addObject(std::make_shared<Plane>(Vec3(0,-6,0), Vec3(0, 1, 0), Vec3(255,255,255), true));
+    world.addObject(std::make_shared<Plane>(Vec3(0,-1.7,0), Vec3(0, 1, 0), Vec3(255,255,255), true));
     world.addObject(std::make_shared<Plane>(Vec3(0,0,-20), Vec3(0, 0, 1), Vec3(64,224,208), false));
 
 
-    world.light = Vec3(0, 50, 10);
-    world.camera = Vec3(0,1,10);
+    world.light = Vec3(10, 30, 10);
+    world.camera = Vec3(0,1,3.5);
     auto start = std::chrono::high_resolution_clock::now();
     render(world);
     auto end = std::chrono::high_resolution_clock::now();

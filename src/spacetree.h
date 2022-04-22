@@ -12,12 +12,6 @@ class SpaceTreeNode{
             Vec3 extend = (max_ - min_);
             box[0] = min_;
             box[1] = max_;
-            intersectionBox[0] = min_ - extend * 0.025f;
-            intersectionBox[1] = max_ + extend * 0.025f;
-            insertionBox[0] = min_ - extend * 0.4f;
-            insertionBox[1] = max_ + extend * 0.4f;
-            expansionBox[0] = min_ - extend * 0.03f;
-            expansionBox[1] = max_ + extend * 0.03f;
         }
 
         ~SpaceTreeNode(){
@@ -29,8 +23,8 @@ class SpaceTreeNode{
             if (depth == 0){
                 return;
             }
-            Vec3 v0 = expansionBox[0];
-            Vec3 v1 = expansionBox[1];
+            Vec3 v0 = box[0];
+            Vec3 v1 = box[1];
             Vec3 center = (v0 + v1) / 2;
             // TOP/BOTTOM LEFT/RIGHT FRONT/BACK
             SpaceTreeNode TRF = SpaceTreeNode(center, v1);
@@ -64,13 +58,13 @@ class SpaceTreeNode{
         bool insert(std::vector<int>& face, Vec3 v0, Vec3 v1, Vec3 v2, uint8_t depth){
             if (depth <= 1){
                 // within the insertion box
-                if (((v0 >= insertionBox[0] && v0 <= insertionBox[1]) || (v1 >= insertionBox[0] && v1 <= insertionBox[1]) || (v2 >= insertionBox[0] && v2 <= insertionBox[1]))){
+                if (((v0 >= box[0] && v0 <= box[1]) || (v1 >= box[0] && v1 <= box[1]) || (v2 >= box[0] && v2 <= box[1]))){
                     return true;
                 }
                 return false;
             }
             // within in the current box
-            if (((v0 >= expansionBox[0] && v0 <= expansionBox[1]) || (v1 >= expansionBox[0] && v1 <= expansionBox[1]) || (v2 >= expansionBox[0] && v2 <= expansionBox[1]))){
+            if (((v0 >= box[0] && v0 <= box[1]) || (v1 >= box[0] && v1 <= box[1]) || (v2 >= box[0] && v2 <= box[1]))){
                 for (SpaceTreeNode& child: children){
                     if (child.insert(face, v0, v1, v2, depth -1)){
                         child.faces.push_back(face);
@@ -82,7 +76,7 @@ class SpaceTreeNode{
 
         bool intersection(Ray ray, std::vector<std::vector<int>>& array){
             bool hit = false;
-            if (AABBIntersection(intersectionBox[0], intersectionBox[1], ray)){
+            if (AABBIntersection(box[0], box[1], ray)){
                 // at bottom if no children
                 if (children.size() == 0){
                     for (auto& face: faces){
@@ -125,9 +119,6 @@ class SpaceTreeNode{
 
     public:
         Vec3 box[2];
-        Vec3 expansionBox[2];
-        Vec3 insertionBox[2];
-        Vec3 intersectionBox[2];
         std::vector<SpaceTreeNode> children;
         std::vector<std::vector<int>> faces;
 };
@@ -163,7 +154,7 @@ class Octree{
 
         std::vector<std::vector<int>> intersection(Ray ray){
             // doesn't intersect with root nodes bounding box
-            if (!AABBIntersection(root.intersectionBox[0], root.intersectionBox[1], ray)){
+            if (!AABBIntersection(root.box[0], root.box[1], ray)){
                 // return empty array
                 std::vector<std::vector<int>> array;
                 return array;

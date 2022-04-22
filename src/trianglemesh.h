@@ -121,8 +121,9 @@ class TriangleMesh: public Observable{
             }
             std::cout << "vmin: " << vmin << std::endl;
             std::cout << "vmax: " << vmax << std::endl;
-            boundingBox[0] = vmin;
-            boundingBox[1] = vmax;
+            Vec3 extend = (vmax - vmin) * 0.01;
+            boundingBox[0] = vmin - extend;
+            boundingBox[1] = vmax + extend;
             tree = Octree(boundingBox, faces, vertices, 6);
         }
 

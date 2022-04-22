@@ -5,14 +5,16 @@ Simple bunny (4968 faces)
 
 All images below have 98601 faces, made faster with an self implemented Octree, 2k quality (2560x1440p)
 
-No shadows
-![Screenshot](images/2knoshadow.png)
-
 With shadows
 ![Screenshot](images/2kshadows.png)
 
 With a background no shadows
 ![Screenshot](images/2kwbackground.png)
+
+~300k triangles in these scenes
+![Screenshot](images/trioshaded.png)
+
+![Screenshot](images/trioshaded2.png)
 
 TODO:
 - Fast shadows  

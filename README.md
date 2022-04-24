@@ -1,23 +1,20 @@
 # cpptracer
 
-Simple bunny (4968 faces)
-![Screenshot](images/bunny.png)
+![Screenshot](images/bust.png)
+500k triangles in scene above
 
-All images below have 98601 faces, made faster with an self implemented Octree, 2k quality (2560x1440p)
-
-With shadows
-![Screenshot](images/2kshadows.png)
-
-With a background no shadows
-![Screenshot](images/2kwbackground.png)
-
-~300k triangles in these scenes
+~300k triangles in these scenes below
 ![Screenshot](images/trioshaded.png)
 
 ![Screenshot](images/trioshaded2.png)
 
+upscaled
+![Screenshot](images/trioupped.png)
+
+down scaled above image with SSAA
+![Screenshot](images/triodown.png)
+
 TODO:
-- Fast shadows  
 - Soft shadows??  
 - Materials mainly metals and glass  
 - Eventually Refraction and Reflection  

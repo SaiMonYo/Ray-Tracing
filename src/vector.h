@@ -87,6 +87,21 @@ class Vec3{
             return *this;
         }
 
+        Vec3 reflect(const Vec3 &normal) const{
+            return *this - normal * 2 * dot(normal);
+        }
+
+        Vec3 refract(const Vec3 &normal, float n) const{
+            float cosTheta = std::fmin(Vec3(-x, -y, -z).dot(normal), 1.0f);
+            Vec3 perp = (*this + normal * cosTheta) * n;
+            Vec3 parralel = normal * -sqrt(std::fabs(1.0f - perp.lengthsquared()));
+            return perp + parralel;
+        }
+
+        Vec3 multiplyColour(const Vec3 &other) const{
+            return Vec3(x * other.x * 0.00392156862f, y * other.y * 0.00392156862f, z * other.z * 0.00392156862);
+        }
+
         Vec3 max(Vec3 other) const{
             return Vec3(std::fmax(x, other.x), std::fmax(y, other.y), std::fmax(z, other.z));
         }
@@ -212,3 +227,7 @@ class Vec3{
             return os;
         }
 };
+
+inline Vec3 operator*(const float value, const Vec3 &other){
+    return Vec3(value * other.x, value * other.y, value * other.z);
+}

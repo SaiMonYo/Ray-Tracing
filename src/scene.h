@@ -27,10 +27,12 @@ class Scene{
         bool intersection(Ray& ray, Intersection& inter) const{
             Intersection temp;
             bool contact = false;
-            for (const auto& object: objects){
-                if (object->intersection(ray, temp)){
+            for (int i = 0; i < objects.size(); i++){
+                if (objects[i]->intersection(ray, temp)){
                     contact = true;
                     inter = temp;
+                    inter.sceneIndex = i;
+                    inter.material = objects[i]->material;
                 }
             }
             return contact;

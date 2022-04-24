@@ -25,13 +25,14 @@ std::string replaceSlash(std::string str){
 
 class TriangleMesh: public Observable{
     public:
-        TriangleMesh(const std::string& filename, const Vec3& colour_){
+        TriangleMesh(const std::string& filename, const Vec3& colour_, std::shared_ptr<Material> material_){
             std::ifstream file(filename);
             if(!file.is_open()){
                 std::cerr << "Could not open file " << filename << std::endl;
                 return;
             }
             colour = colour_;
+            material = material_;
             std::string line;
             while(std::getline(file, line)){
                 if(line.empty()) continue;
@@ -144,6 +145,16 @@ class TriangleMesh: public Observable{
             recalcBoundingBox();
         }
 
+        void floor(){
+            float miny = boundingBox[0].y;
+            translate(Vec3(0, -miny, 0));
+        }
+        
+        void floor(float floorHeight){
+            float miny = boundingBox[0].y;
+            translate(Vec3(0, -miny + floorHeight, 0));
+        }
+
         void rotate(float pitch, float roll, float yaw){
             float cosa = cos(yaw);
             float sina = sin(yaw);
@@ -193,12 +204,19 @@ class TriangleMesh: public Observable{
         }
 
         bool intersection(Ray& ray, Intersection& inter){
+            if (!AABBIntersection(boundingBox[0], boundingBox[1], ray)){
+                return false;
+            }
             int index = -1;
             float pu = 0;
             float pv = 0;
+            bool in = false;
             std::vector<std::vector<int>> possibleFaces = tree.intersection(ray);
             // check if all elements in possibleFaces are in faces
-
+            if (possibleFaces.size() == 0){
+                return false;
+            }
+            //std::cout << "possibleFaces: " << possibleFaces.size() << std::endl;
             for(int i = 0; i < possibleFaces.size(); i++){
                 // check if ray intersects face by using moller-trumbore algorithm
                 auto face = possibleFaces[i];
@@ -209,7 +227,7 @@ class TriangleMesh: public Observable{
                 Vec3 v0v2 = v2 - v0;
                 Vec3 pvec = ray.direction.cross(v0v2);
                 float det = v0v1.dot(pvec);
-                if (det < EPSILLON){
+                if (std::fabs(det) < EPSILLON){
                     continue;
                 }
 
@@ -230,6 +248,7 @@ class TriangleMesh: public Observable{
 
                 float t = v0v2.dot(qvec) * invdet;
                 if (t > EPSILLON && t < inter.timestep){
+                    in = (det < 0);
                     pu = u;
                     pv = v;
                     inter.timestep = t;
@@ -238,6 +257,7 @@ class TriangleMesh: public Observable{
             }
             // index is greater than -1 if there is an intersection
             if (index > -1){
+                inter.inside = in;
                 inter.point = ray.attime(inter.timestep);
                 auto face = possibleFaces[index];
                 Vec3 n0 = normals[face[0] - 1];

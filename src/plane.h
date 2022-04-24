@@ -7,11 +7,12 @@
 
 class Plane: public Observable{
     public:
-        Plane(Vec3 point_, Vec3 normal_, Vec3 colour_, bool checkered_){
+        Plane(Vec3 point_, Vec3 normal_, Vec3 colour_, bool checkered_, std::shared_ptr<Material> material_){
             normal = normal_;
             point = point_;
             colour = colour_;
             checkered = checkered_;
+            material = material_;
         }
 
         bool intersection(Ray& ray, Intersection& inter){
@@ -26,6 +27,7 @@ class Plane: public Observable{
                         inter.colour = colour;
                     }
                     else{
+                        // checkerboard
                         inter.colour = (int(floor(inter.point.x) + int(floor(inter.point.z))) % 2 == 0) ? Vec3(255, 255, 255) : Vec3(80, 80, 80);
                     }
                     return true;

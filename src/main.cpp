@@ -4,13 +4,15 @@
 #include "plane.h"
 #include "trianglemesh.h"
 #include "scene.h"
+#include "material.h"
 #include <chrono>
 
 
-const int WIDTH = 1280;
-const int HEIGHT = 640;
+const int WIDTH = 1600;
+const int HEIGHT = 1600;
 const float fov = M_PI / 4;
 
+// byte headers for QOI file
 const int QOI_OP_RUN   = 0xc0;
 const int QOI_OP_INDEX = 0x00;
 const int QOI_OP_DIFF  = 0x40;
@@ -19,35 +21,28 @@ const int QOI_OP_RGB   = 0xfe;
 const int QOI_OP_RGBA  = 0xff;
 
 
-Vec3 trace(Ray &ray, Scene world){
+Vec3 trace(Ray &ray, Scene world, int depth){
+    if (depth <= 0) return Vec3(0, 0, 0);
     float tnear = finf;
     Intersection inter;
     if (world.intersection(ray, inter)){
-        //working but takes x4 longer
-        //get shadows
-        Vec3 pointToLight = (world.light - inter.point).normalise();
-        Ray shadowRay(inter.point + pointToLight * 0.0001f, pointToLight);
-        Intersection shadowInter;
-        if (world.intersection(shadowRay, shadowInter)){
-            return Vec3(0, 0, 0);
+        Ray transmitted;
+        Vec3 col;
+        // deal with transmission (refraction, reflection)
+        if (inter.material->transmit(ray, inter, col, transmitted, world)){
+            return trace(transmitted, world, depth - 1);
         }
-
-        float dotted = inter.normal.dot(pointToLight);
-        Vec3 colour = inter.colour * dotted;
-
-        Vec3 v = (pointToLight - ray.direction).normalise();
-        float phong = pow(inter.normal.dot(v), 64);
-        colour += Vec3(255, 255, 255) * phong * 0.4;
-        return colour;
+        return col;
     }
-    return Vec3(0,0,0);
+    return Vec3(0);
 }
 
-
+// key for colour in QOI file
 int getKey(Vec3 colour){
     return ((int)(colour.x * 3 + colour.y * 5 + colour.z * 7) % 64);
 }
 
+// write 32 bit number to file
 void write32(std::ofstream& file, long value){
     file << (unsigned char) ((value & 0xff000000) >> 24);
     file << (unsigned char) ((value & 0x00ff0000) >> 16);
@@ -62,6 +57,7 @@ void render(Scene world){
     float angle = tan(fov);
     Vec3 colour;
     std::ofstream qoi("images/result.qoi", std::ios::out|std::ios::binary);
+    // write file headers
     write32(qoi, 0x716f6966);
     write32(qoi, WIDTH);
     write32(qoi, HEIGHT);
@@ -76,7 +72,7 @@ void render(Scene world){
             float xd = (2 * ((x+0.5) * invWidth) - 1) * angle * ratio;
             float yd = (1 - 2 * ((y + 0.5) * invHeight)) * angle;
             Ray ray = Ray(world.camera, Vec3(xd, yd, -1).normalise());
-            colour = trace(ray, world).clamp(0, 255);
+            colour = trace(ray, world, 1).clamp(0, 255);
             colour.toFloor();
             // write to qoi
             if (colour == previous){
@@ -124,6 +120,7 @@ void render(Scene world){
             previous = colour;
             }
         }
+        // update user on render progress
         if (y % (HEIGHT / 10) == 0){
             std::cout << "Rendering: " << (y * 100) / HEIGHT << "%" << std::endl;
         }
@@ -136,32 +133,48 @@ void render(Scene world){
 int main(){ 
     //time the render
     Scene world;
-    // lady lucy
-    // std::shared_ptr<TriangleMesh> lucy = std::make_shared<TriangleMesh>("Objects/lucy.obj", Vec3(78,117,102));
+    // load lucy
+    // std::shared_ptr<TriangleMesh> lucy = std::make_shared<TriangleMesh>("Objects/lucy.obj", Vec3(78,117,102), std::make_shared<Phong>());
     // lucy->rescale(0.01);
     // lucy->rotate(0, M_PI/2, M_PI);
     // lucy->center();
+    // lucy->floor(-1);
     // lucy->translate(Vec3(-10, 0, 0));
     // world.addObject(lucy);
 
-    // buddha
-    std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92));
-    buddha->rescale(20);
-    world.addObject(buddha);
+    // // load buddha
+    // std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92), std::make_shared<Phong>());
+    // buddha->rescale(80);
+    // buddha->center();
+    // buddha->floor(-1);
+    // buddha->translate(Vec3(10, 0, 0));
+    // world.addObject(buddha);
 
-    // bunny
-    // std::shared_ptr<TriangleMesh> bunny = std::make_shared<TriangleMesh>("Objects/bigbunny.obj", Vec3(255,255,255));
-    // bunny->rescale(50);
+    // // load bunny
+    // std::shared_ptr<TriangleMesh> bunny = std::make_shared<TriangleMesh>("Objects/bigbunny.obj", Vec3(255,255,255), std::make_shared<Phong>());
+    // bunny->rescale(60);
     // bunny->center();
+    // bunny->floor(-1);
     // world.addObject(bunny);
 
-    //planes
-    world.addObject(std::make_shared<Plane>(Vec3(0,-1.7,0), Vec3(0, 1, 0), Vec3(255,255,255), true));
-    world.addObject(std::make_shared<Plane>(Vec3(0,0,-20), Vec3(0, 0, 1), Vec3(64,224,208), false));
+    // // create planes
+    // world.addObject(std::make_shared<Plane>(Vec3(0,-1,0), Vec3(0, 1, 0), Vec3(255,255,255), true, std::make_shared<Phong>()));
+    // world.addObject(std::make_shared<Plane>(Vec3(0,0,-20), Vec3(0, 0, 1), Vec3(64,224,208), false, std::make_shared<Phong>()));
 
+    //load buddha
+    // std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92), std::make_shared<Phong>());
+    // buddha->rescale(80);
+    // buddha->center();
+    // world.addObject(buddha);
 
-    world.light = Vec3(10, 30, 10);
-    world.camera = Vec3(0,1,3.5);
+    // load the bust
+    std::shared_ptr<TriangleMesh> bust = std::make_shared<TriangleMesh>("Objects/bust.obj", Vec3(228,186,163), std::make_shared<Phong>());
+    bust->rotate(0, M_PI/2, -M_PI/4);
+    bust->center();
+    world.addObject(bust);
+
+    world.light = Vec3(30, 50, 30);
+    world.camera = Vec3(0,0,15);
     auto start = std::chrono::high_resolution_clock::now();
     render(world);
     auto end = std::chrono::high_resolution_clock::now();

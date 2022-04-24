@@ -58,13 +58,13 @@ class SpaceTreeNode{
         bool insert(std::vector<int>& face, Vec3 v0, Vec3 v1, Vec3 v2, uint8_t depth){
             if (depth <= 1){
                 // within the insertion box
-                if (((v0 >= box[0] && v0 <= box[1]) || (v1 >= box[0] && v1 <= box[1]) || (v2 >= box[0] && v2 <= box[1]))){
+                if (AABBIntersection(box[0], box[1], v0, v1, v2)){
                     return true;
                 }
                 return false;
             }
             // within in the current box
-            if (((v0 >= box[0] && v0 <= box[1]) || (v1 >= box[0] && v1 <= box[1]) || (v2 >= box[0] && v2 <= box[1]))){
+            if (AABBIntersection(box[0], box[1], v0, v1, v2)){
                 for (SpaceTreeNode& child: children){
                     if (child.insert(face, v0, v1, v2, depth -1)){
                         child.faces.push_back(face);
@@ -90,31 +90,6 @@ class SpaceTreeNode{
                 }
             }
             return hit;
-        }
-
-        int countleaves(){
-            // count all leaves
-            if (children.size() == 0){
-                return faces.size();
-            }
-            int count = 0;
-            for (SpaceTreeNode& child: children){
-                count += child.countleaves();
-            }
-            return count;
-        }
-
-        void getLeaves(std::vector<std::vector<int>>& array){
-            if (children.size() == 0){
-                for (auto& face: faces){
-                    array.push_back(face);
-                }
-            }
-            else{
-                for (SpaceTreeNode& child: children){
-                    child.getLeaves(array);
-                }
-            }
         }
 
     public:
@@ -143,8 +118,6 @@ class Octree{
                 }
             }
             std::cout << "Faces: " << faces_.size() << std::endl;
-            std::cout << "Unique leaves: " << getLeaves().size() << std::endl;
-            std::cout << "Total leaves: " << root.countleaves() << std::endl;
         }
 
         ~Octree(){
@@ -172,30 +145,6 @@ class Octree{
             }
             tests.assign(s.begin(), s.end());
             return tests;
-        }
-
-        int countleaves(){
-            // count number of leaves (faces)
-            int n = 0;
-            for (SpaceTreeNode node: root.children){
-                n += node.countleaves();
-            }
-            return n;
-        }
-
-        std::vector<std::vector<int>> getLeaves() const{
-            // get all leaves (faces) in the tree and remove duplicates
-            std::vector<std::vector<int>> leaves;
-            for (SpaceTreeNode node: root.children){
-                node.getLeaves(leaves);
-            }
-            std::set<std::vector<int>> s;
-            unsigned size = leaves.size();
-            for(unsigned i = 0; i < size; i++){
-                s.insert(leaves[i]);
-            }
-            leaves.assign(s.begin(), s.end());
-            return leaves;
         }
 
     public:

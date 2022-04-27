@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ray.h"
 #include "observables.h"
 #include <iostream>
@@ -23,6 +25,7 @@ class Plane: public Observable{
                     inter.point = ray.origin + ray.direction * t;
                     inter.normal = normal;
                     inter.timestep = t;
+                    inter.set_face_normal(ray, normal);
                     if (!checkered){
                         inter.colour = colour;
                     }

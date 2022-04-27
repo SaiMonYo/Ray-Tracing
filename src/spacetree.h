@@ -9,7 +9,8 @@ class SpaceTreeNode{
         }
 
         SpaceTreeNode(Vec3 min_, Vec3 max_){
-            Vec3 extend = (max_ - min_);
+            center = (max_ + min_) * 0.5f;
+            extents = max_ - center;
             box[0] = min_;
             box[1] = max_;
         }
@@ -25,7 +26,6 @@ class SpaceTreeNode{
             }
             Vec3 v0 = box[0];
             Vec3 v1 = box[1];
-            Vec3 center = (v0 + v1) / 2;
             // TOP/BOTTOM LEFT/RIGHT FRONT/BACK
             SpaceTreeNode TRF = SpaceTreeNode(center, v1);
             TRF.build(depth - 1);
@@ -58,13 +58,13 @@ class SpaceTreeNode{
         bool insert(std::vector<int>& face, Vec3 v0, Vec3 v1, Vec3 v2, uint8_t depth){
             if (depth <= 1){
                 // within the insertion box
-                if (AABBIntersection(box[0], box[1], v0, v1, v2)){
+                if (AABBIntersection(center, extents, v0, v1, v2)){
                     return true;
                 }
                 return false;
             }
             // within in the current box
-            if (AABBIntersection(box[0], box[1], v0, v1, v2)){
+            if (AABBIntersection(center, extents, v0, v1, v2)){
                 for (SpaceTreeNode& child: children){
                     if (child.insert(face, v0, v1, v2, depth -1)){
                         child.faces.push_back(face);
@@ -92,8 +92,22 @@ class SpaceTreeNode{
             return hit;
         }
 
+        bool cull(){
+            std::vector<SpaceTreeNode> tokeep;
+            for (SpaceTreeNode& node: children){
+                if (!node.cull()){
+                    tokeep.push_back(node);
+                }
+            }
+            children.clear();
+            children = tokeep;
+            return (children.size() == 0 && faces.size() == 0);
+        }
+
     public:
         Vec3 box[2];
+        Vec3 center;
+        Vec3 extents;
         std::vector<SpaceTreeNode> children;
         std::vector<std::vector<int>> faces;
 };
@@ -117,6 +131,7 @@ class Octree{
                     }
                 }
             }
+            root.cull();
             std::cout << "Faces: " << faces_.size() << std::endl;
         }
 

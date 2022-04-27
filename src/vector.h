@@ -88,11 +88,11 @@ class Vec3{
         }
 
         Vec3 reflect(const Vec3 &normal) const{
-            return *this - normal * 2 * dot(normal);
+            return *this - normal * dot(normal) * 2;
         }
 
         Vec3 refract(const Vec3 &normal, float n) const{
-            float cosTheta = std::fmin(Vec3(-x, -y, -z).dot(normal), 1.0f);
+            float cosTheta = std::fmin(-dot(normal), 1.0f);
             Vec3 perp = (*this + normal * cosTheta) * n;
             Vec3 parralel = normal * -sqrt(std::fabs(1.0f - perp.lengthsquared()));
             return perp + parralel;

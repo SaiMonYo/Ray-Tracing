@@ -5,11 +5,12 @@
 #include "trianglemesh.h"
 #include "scene.h"
 #include "material.h"
+#include "sphere.h"
 #include <chrono>
 
 
-const int WIDTH = 1600;
-const int HEIGHT = 1600;
+const int WIDTH = 1080;
+const int HEIGHT = 2340;
 const float fov = M_PI / 4;
 
 // byte headers for QOI file
@@ -23,7 +24,7 @@ const int QOI_OP_RGBA  = 0xff;
 
 Vec3 trace(Ray &ray, Scene world, int depth){
     if (depth <= 0) return Vec3(0, 0, 0);
-    float tnear = finf;
+
     Intersection inter;
     if (world.intersection(ray, inter)){
         Ray transmitted;
@@ -72,7 +73,7 @@ void render(Scene world){
             float xd = (2 * ((x+0.5) * invWidth) - 1) * angle * ratio;
             float yd = (1 - 2 * ((y + 0.5) * invHeight)) * angle;
             Ray ray = Ray(world.camera, Vec3(xd, yd, -1).normalise());
-            colour = trace(ray, world, 1).clamp(0, 255);
+            colour = trace(ray, world, 20).clamp(0, 255);
             colour.toFloor();
             // write to qoi
             if (colour == previous){
@@ -131,7 +132,6 @@ void render(Scene world){
 
 
 int main(){ 
-    //time the render
     Scene world;
     // load lucy
     // std::shared_ptr<TriangleMesh> lucy = std::make_shared<TriangleMesh>("Objects/lucy.obj", Vec3(78,117,102), std::make_shared<Phong>());
@@ -150,9 +150,9 @@ int main(){
     // buddha->translate(Vec3(10, 0, 0));
     // world.addObject(buddha);
 
-    // // load bunny
+    // load bunny
     // std::shared_ptr<TriangleMesh> bunny = std::make_shared<TriangleMesh>("Objects/bigbunny.obj", Vec3(255,255,255), std::make_shared<Phong>());
-    // bunny->rescale(60);
+    // bunny->rescale(10);
     // bunny->center();
     // bunny->floor(-1);
     // world.addObject(bunny);
@@ -161,10 +161,12 @@ int main(){
     // world.addObject(std::make_shared<Plane>(Vec3(0,-1,0), Vec3(0, 1, 0), Vec3(255,255,255), true, std::make_shared<Phong>()));
     // world.addObject(std::make_shared<Plane>(Vec3(0,0,-20), Vec3(0, 0, 1), Vec3(64,224,208), false, std::make_shared<Phong>()));
 
+
     //load buddha
-    // std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92), std::make_shared<Phong>());
-    // buddha->rescale(80);
+    // std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92), std::make_shared<Glass>(1.5));
+    // buddha->rescale(60);
     // buddha->center();
+    // buddha->floor(-1);
     // world.addObject(buddha);
 
     // load the bust
@@ -174,7 +176,7 @@ int main(){
     world.addObject(bust);
 
     world.light = Vec3(30, 50, 30);
-    world.camera = Vec3(0,0,15);
+    world.camera = Vec3(0,2,20);
     auto start = std::chrono::high_resolution_clock::now();
     render(world);
     auto end = std::chrono::high_resolution_clock::now();

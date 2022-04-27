@@ -18,6 +18,7 @@ class Material{
     public:
         Material(){}
         virtual bool transmit(const Ray& ray, Intersection& inter, Vec3& colour, Ray& transmissionRay, Scene& world) const = 0;
+        std::string name;
 };
 
 
@@ -28,6 +29,7 @@ class Phong: public Material{
 
         bool inline transmit(const Ray& ray, Intersection& inter, Vec3& colour, Ray& transmissionRay, Scene& world) const{
             Vec3 pointToLight = (world.light - inter.point).normalise();
+            // comment out for glass material testing
             Ray shadowRay(inter.point + pointToLight * 0.0001f, pointToLight);
             Intersection shadowInter;
             if (world.intersection(shadowRay, shadowInter)){
@@ -43,6 +45,8 @@ class Phong: public Material{
             colour = pixelColour + Vec3(255, 255, 255) * phong * 0.4;
             return false;
         }
+
+        std::string name = "Phong";
 };
 
 
@@ -50,34 +54,19 @@ class Glass: public Material{
     public:
         Glass(float refractionIndex_){
             refractionIndex = refractionIndex_;
+            refractionIndexLookup[0] = refractionIndex;
+            refractionIndexLookup[1] = 1.0f / refractionIndex;
         }
 
         virtual bool inline transmit(const Ray& ray, Intersection& inter, Vec3& colour, Ray& transmissionRay, Scene& world) const{
             colour = Vec3(255);
-            float ratio = (inter.inside) ? 1.0f / refractionIndex : refractionIndex;
-            float cosTheta = std::fmin((-ray.direction).dot(inter.normal), 1.0f);
-            float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
-
-            bool totalInternalReflection = (refractionIndex * sinTheta > 1.0f);
             Vec3 direction;
-
-            if (totalInternalReflection || reflectance(cosTheta, ratio) > random_float()){
-                direction = ray.direction.reflect(inter.normal).normalise();
-            }
-            else{
-                direction = ray.direction.refract(inter.normal, ratio).normalise();
-            }
-            transmissionRay = Ray(inter.point, direction);
+            direction = ray.direction.refract(inter.normal, refractionIndexLookup[inter.inside]);
+            transmissionRay = Ray(inter.point - inter.normal * 0.01, direction);
             return true;
         }
 
+        float refractionIndexLookup[2];
         float refractionIndex;
-
-    private:
-        static double reflectance(double cosine, double ref_idx) {
-            // Schlick's approximation
-            auto r0 = (1-ref_idx) / (1+ref_idx);
-            r0 = r0*r0;
-            return r0 + (1-r0)*pow((1 - cosine),5);
-        }
+        std::string name = "Glass";
 };

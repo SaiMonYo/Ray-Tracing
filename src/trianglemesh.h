@@ -125,7 +125,7 @@ class TriangleMesh: public Observable{
             Vec3 extend = (vmax - vmin) * 0.01;
             boundingBox[0] = vmin - extend;
             boundingBox[1] = vmax + extend;
-            tree = Octree(boundingBox, faces, vertices, 6);
+            tree = Octree(boundingBox, faces, vertices, 7);
         }
 
         Vec3 getCentroid(){
@@ -260,13 +260,8 @@ class TriangleMesh: public Observable{
                 inter.inside = in;
                 inter.point = ray.attime(inter.timestep);
                 auto face = possibleFaces[index];
-                Vec3 n0 = normals[face[0] - 1];
-                Vec3 n1 = normals[face[1] - 1];
-                Vec3 n2 = normals[face[2] - 1];
-                float n0n1 = n1.dot(n0);
-                float n0n2 = n2.dot(n0);
-                float n1n2 = n2.dot(n1);
                 inter.normal = normals[face[0] - 1] * (1 - pu - pv) + normals[face[1] - 1] * pu + normals[face[2] - 1] * pv;
+                inter.set_face_normal(ray, inter.normal);
                 inter.colour = colour;
                 return true;
             }

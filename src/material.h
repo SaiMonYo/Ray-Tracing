@@ -22,6 +22,27 @@ class Material{
 };
 
 
+class Lambertian: public Material{
+    public:
+        Lambertian(){
+        }
+
+        bool inline transmit(const Ray& ray, Intersection& inter, Vec3& colour, Ray& transmissionRay, Scene& world) const{
+            colour = inter.colour * 0.5f;
+            Vec3 l = (world.light - inter.point);
+            float rs = l.lengthsquared();
+            l.normalise();
+            float t = sqrt(rs);
+            Vec3 drl = 0.7 * (Vec3(1000) / rs) * fmax(0, l.dot(inter.normal)); 
+            colour += drl;
+            colour += inter.colour * inter.normal.dot(l) * 0.1; 
+            return false;
+        }
+
+        std::string name = "Lambertian";
+};
+
+
 class Phong: public Material{
     public:
         Phong(){
@@ -29,14 +50,6 @@ class Phong: public Material{
 
         bool inline transmit(const Ray& ray, Intersection& inter, Vec3& colour, Ray& transmissionRay, Scene& world) const{
             Vec3 pointToLight = (world.light - inter.point).normalise();
-            // comment out for glass material testing
-            Ray shadowRay(inter.point + pointToLight * 0.0001f, pointToLight);
-            Intersection shadowInter;
-            if (world.intersection(shadowRay, shadowInter)){
-                colour = Vec3(0, 0, 0);
-                return false;
-            }
-
             float dotted = inter.normal.dot(pointToLight);
             Vec3 pixelColour = inter.colour * dotted;
 

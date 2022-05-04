@@ -4,4 +4,5 @@
 *.qoi
 *.txt
 images/result.png
+Objects/dragon.obj
 test.py

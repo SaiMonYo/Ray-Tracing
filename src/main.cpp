@@ -9,9 +9,9 @@
 #include <chrono>
 
 
-const int WIDTH = 1080;
-const int HEIGHT = 2340;
-const float fov = M_PI / 4;
+const int WIDTH = 2560 * 3;
+const int HEIGHT = 1440 * 3;
+const float fov = M_PI / 3;
 
 // byte headers for QOI file
 const int QOI_OP_RUN   = 0xc0;
@@ -27,6 +27,17 @@ Vec3 trace(Ray &ray, Scene world, int depth){
 
     Intersection inter;
     if (world.intersection(ray, inter)){
+        Vec3 l = (world.light - inter.point);
+        float rs = l.lengthsquared();
+        l.normalise();
+        float t = sqrt(rs);
+
+        Ray shadowRay(inter.point + l * 0.0001f, l);
+        Intersection shadowInter;
+        shadowInter.timestep = t;
+        if (world.intersection(shadowRay, shadowInter)){
+            return Vec3(0, 0, 0);
+        }
         Ray transmitted;
         Vec3 col;
         // deal with transmission (refraction, reflection)
@@ -133,50 +144,25 @@ void render(Scene world){
 
 int main(){ 
     Scene world;
-    // load lucy
-    // std::shared_ptr<TriangleMesh> lucy = std::make_shared<TriangleMesh>("Objects/lucy.obj", Vec3(78,117,102), std::make_shared<Phong>());
-    // lucy->rescale(0.01);
-    // lucy->rotate(0, M_PI/2, M_PI);
-    // lucy->center();
-    // lucy->floor(-1);
-    // lucy->translate(Vec3(-10, 0, 0));
-    // world.addObject(lucy);
+    //create cornell box
+    world.addObject(std::make_shared<Plane>(Vec3(0, 0, 0), Vec3(0, 1, 0), Vec3(255), false, std::make_shared<Lambertian>()));
+    world.addObject(std::make_shared<Plane>(Vec3(0, 0, -10), Vec3(0, 0, 1), Vec3(255), false, std::make_shared<Lambertian>()));
+    world.addObject(std::make_shared<Plane>(Vec3(0, 10, 0), Vec3(0, -1, 0), Vec3(255), false, std::make_shared<Lambertian>()));
+    world.addObject(std::make_shared<Plane>(Vec3(-10, 0, 0), Vec3(1, 0, 0), Vec3(170,0,0), false, std::make_shared<Lambertian>()));
+    world.addObject(std::make_shared<Plane>(Vec3(10, 0, 0), Vec3(-1, 0, 0), Vec3(0,170,0), false, std::make_shared<Lambertian>()));
 
-    // // load buddha
-    // std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92), std::make_shared<Phong>());
-    // buddha->rescale(80);
-    // buddha->center();
-    // buddha->floor(-1);
-    // buddha->translate(Vec3(10, 0, 0));
-    // world.addObject(buddha);
+    world.light = Vec3(0, 9.9, -5);
 
-    // load bunny
-    // std::shared_ptr<TriangleMesh> bunny = std::make_shared<TriangleMesh>("Objects/bigbunny.obj", Vec3(255,255,255), std::make_shared<Phong>());
-    // bunny->rescale(10);
-    // bunny->center();
-    // bunny->floor(-1);
-    // world.addObject(bunny);
+    std::shared_ptr<TriangleMesh> dragon = std::make_shared<TriangleMesh>("Objects/dragon.obj", Vec3(102,0,0), std::make_shared<Phong>());
+    dragon->rotate(0, M_PI/2, 0);
+    dragon->rescale(0.06);
+    dragon->center();
+    dragon->floor(0);
+    dragon->translate(Vec3(0, 0, -7.5));
+    dragon->recalcOctree();
+    world.addObject(dragon);
 
-    // // create planes
-    // world.addObject(std::make_shared<Plane>(Vec3(0,-1,0), Vec3(0, 1, 0), Vec3(255,255,255), true, std::make_shared<Phong>()));
-    // world.addObject(std::make_shared<Plane>(Vec3(0,0,-20), Vec3(0, 0, 1), Vec3(64,224,208), false, std::make_shared<Phong>()));
-
-
-    //load buddha
-    // std::shared_ptr<TriangleMesh> buddha = std::make_shared<TriangleMesh>("Objects/Happy.obj", Vec3(252,140,92), std::make_shared<Glass>(1.5));
-    // buddha->rescale(60);
-    // buddha->center();
-    // buddha->floor(-1);
-    // world.addObject(buddha);
-
-    // load the bust
-    std::shared_ptr<TriangleMesh> bust = std::make_shared<TriangleMesh>("Objects/bust.obj", Vec3(228,186,163), std::make_shared<Phong>());
-    bust->rotate(0, M_PI/2, -M_PI/4);
-    bust->center();
-    world.addObject(bust);
-
-    world.light = Vec3(30, 50, 30);
-    world.camera = Vec3(0,2,20);
+    world.camera = Vec3(0,5,0);
     auto start = std::chrono::high_resolution_clock::now();
     render(world);
     auto end = std::chrono::high_resolution_clock::now();

@@ -26,6 +26,7 @@ class Scene{
 
         bool intersection(Ray& ray, Intersection& inter) const{
             Intersection temp;
+            temp.timestep = inter.timestep;
             bool contact = false;
             for (int i = 0; i < objects.size(); i++){
                 if (objects[i]->intersection(ray, temp)){

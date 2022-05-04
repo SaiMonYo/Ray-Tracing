@@ -125,6 +125,10 @@ class TriangleMesh: public Observable{
             Vec3 extend = (vmax - vmin) * 0.01;
             boundingBox[0] = vmin - extend;
             boundingBox[1] = vmax + extend;
+        }
+
+        void recalcOctree(){
+            recalcBoundingBox();
             tree = Octree(boundingBox, faces, vertices, 7);
         }
 
@@ -138,14 +142,15 @@ class TriangleMesh: public Observable{
         }
 
         void center(){
-            Vec3 centroid = getCentroid();
+            Vec3 cent = (boundingBox[1] + boundingBox[0]) * 0.5f;
             for (int i = 0; i < vertices.size(); i++){
-                vertices[i] -= centroid;
+                vertices[i] -= cent;
             }
             recalcBoundingBox();
         }
 
         void floor(){
+            recalcBoundingBox();
             float miny = boundingBox[0].y;
             translate(Vec3(0, -miny, 0));
         }

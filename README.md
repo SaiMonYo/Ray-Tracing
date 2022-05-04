@@ -1,15 +1,21 @@
 # cpptracer
 
-![Screenshot](images/bust.png)
-500k triangles in scene above
+
+![Stanford Dragon](images/cornellupscaled.png)
+2.3Million Triangles in scene above, 60 Million pixels
+
+---------------------
+
+500k triangles in scene below
+![bust of rhetorican](images/bust.png)
 
 refraction working
-![Screenshot](images/glassbuddha.png)
+![glass buddha](images/glassbuddha.png)
 
 ~300k triangles in these scenes below
-![Screenshot](images/trioshaded.png)
+![trio shaded](images/trioshaded.png)
 
-![Screenshot](images/trioupped.png)
+![trio shaded](images/trioupped.png)
 
 
 TODO:

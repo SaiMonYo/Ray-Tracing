@@ -77,5 +77,10 @@ inline bool AABBIntersection(const Vec3& center, const Vec3& e, Vec3 v0, Vec3 v1
     if (std::fabs(center.x - center1.x) > e.x + e1.x) return false;
     if (std::fabs(center.y - center1.y) > e.y + e1.y) return false;
     if (std::fabs(center.z - center1.z) > e.z + e1.z) return false;
-    return true;
+
+    Vec3 normal = (v1 - v0).cross(v2 - v0);
+    float r = e.x * fabs(normal.x) + e.y * fabs(normal.y) + e.z * fabs(normal.z);
+    float s = normal.dot(center - v0);
+
+    return (fabs(r) > s);
 }
